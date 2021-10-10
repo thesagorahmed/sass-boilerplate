@@ -1,21 +1,24 @@
-const { src, dest, watch, series } = require('gulp')
+// Initialize modules
+const { src, dest, watch, series } = require('gulp');
 const sass = require('gulp-sass')(require('sass'));
 const terser = require('gulp-terser');
 const browsersync = require('browser-sync').create();
 
-function buildStyles() {
-  return src('app/scss/style.scss')
+
+
+// Sass Task
+function scssTask() {
+  return src('app/scss/style.scss', { sourcemaps: true })
     .pipe(sass())
-    .pipe(dest('dist'))
+    .pipe(dest('dist', { sourcemaps: '.' }));
 }
 
 // JavaScript Task
 function jsTask() {
-    return src('app/js/script.js', { sourcemaps: true })
-      
-      .pipe(terser())
-      .pipe(dest('dist', { sourcemaps: '.' }));
-  }
+  return src('app/js/script.js', { sourcemaps: true })
+    .pipe(terser())
+    .pipe(dest('dist', { sourcemaps: '.' }));
+}
 
 // Browsersync
 function browserSyncServe(cb) {
@@ -36,10 +39,18 @@ function browserSyncReload(cb) {
   browsersync.reload();
   cb();
 }
-  
+
+// Watch Task
 function watchTask() {
   watch('*.html', browserSyncReload);
-  watch(['app/scss/**/*.scss', 'app/js/*.js'], jsTask, buildStyles, browserSyncReload)
+  watch(
+    ['app/scss/**/*.scss', 'app/**/*.js'],
+    series(scssTask, jsTask, browserSyncReload)
+  );
 }
 
-exports.default = series(buildStyles, jsTask, watchTask, browserSyncServe)
+// Default Gulp Task
+exports.default = series(scssTask, jsTask, browserSyncServe, watchTask);
+
+// Build Gulp Task
+exports.build = series(scssTask, jsTask);
